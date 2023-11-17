@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario Lista</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<table id="elementosTabla">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Apellido</th>
+      <th>Nombre</th>
+      <th>Edad</th>
+      <th>Equipo</th>
+      <th>Posicion</th>
+      <th>Cantidad de Goles</th>
+      <th>Titulo</th>
+      <th>Facultad</th>
+      <th>Año de Graduado</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<button id="agregarElemento" onclick="agregarElemento()">Agregar Elemento</button>
+
+<div id="formularioContainer" style="display: none;">
+    <h1> FORMULARIO ABM </h1>
+    <form id="formularioABM">
+      </br>
+      <label>ID:</label>
+      <input type="text" id="idInput" disabled>
+      
+      <label>Nombre:</label>
+      <input type="text" id="nombreInput">
+      
+      <label>Apellido:</label>
+      <input type="text" id="apellidoInput">
+      
+      <label>Edad:</label>
+      <input type="text" id="edadInput">
+    
+      <label>Equipo:</label>
+      <input type="text" id="equipoInput" oninput="habilitarCamposEmpleado()">
+    
+      <label>Posición:</label>
+      <input type="text" id="posicionInput" oninput="habilitarCamposEmpleado()">
+    
+      <label>Cantidad de Goles:</label>
+      <input type="text" id="cantidadGolesInput" oninput="habilitarCamposEmpleado()">
+
+      <label>Título:</label>
+      <input type="text" id="tituloInput" oninput="habilitarCamposEmpleado()">
+    
+      <label>Facultad:</label>
+      <input type="text" id="facultadInput" oninput="habilitarCamposEmpleado()">
+    
+      <label>Año de Graduado:</label>
+      <input type="text" id="añoGraduacionInput" oninput="habilitarCamposEmpleado()">
+      
+      <div id="accionesFormulario">
+        <button type="button" onclick="realizarAccion()">Aceptar</button>
+        <button type="button" onclick="cancelarAccion()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="spinner-container">
+    <div class="spinner"></div>
+  </div>
+
+</html>
+
+<script>
+
+// VARIABLES CONSTANTES
+const URL_SERVIDOR = "http://localhost/personasFutbolitasProfesionales.php";
+
+//CLASES
+
+class Persona {
+  constructor(id, apellido, nombre, edad) {
+    this.id = id;
+    this.apellido = apellido;
+    this.nombre = nombre;
+    this.edad = edad;
+  }
+
+  toString() {
+    return `Persona: ${this.nombre} ${this.apellido}, Edad: ${this.edad}, ID: ${this.id}`;
+  }
+}
+
+class Futbolista extends Persona {
+  constructor(id, apellido, nombre, edad, equipo, posicion, cantidadGoles) {
+    super(id, apellido, nombre, edad);
+    this.equipo = equipo;
+    this.posicion = posicion;
+    this.cantidadGoles = cantidadGoles;
+  }
+
+  toString() {
+    return `${super.toString()}, Futbolista - Equipo: ${this.equipo}, Posición: ${this.posicion}, Goles: ${this.cantidadGoles}`;
+  }
+}
+
+class Profesional extends Persona {
+  constructor(id, apellido, nombre, edad, titulo, facultad, añoGraduacion) {
+    super(id, apellido, nombre, edad);
+    this.titulo = titulo;
+    this.facultad = facultad;
+    this.añoGraduacion = añoGraduacion;
+  }
+
+  toString() {
+    return `${super.toString()}, Profesional - Título: ${this.titulo}, Facultad: ${this.facultad}, Año de Graduado: ${this.añoGraduacion}`;
+  }
+}
+
+// GET - OBTENER DATOS
+
+// OBTENER DATOS DEL SERVIDOR
+let listaObjeto = [];
+
+obtenerDatosDesdeServidor(URL_SERVIDOR, function (error, datos) {
+  if (error) {
+    alert(`Error en la solicitud: ${error}`);
+  } else {
+    listaObjeto = datos;  
+    console.log(listaObjeto); 
+    agregarFila(false);
+  }
+});
+
+
+function obtenerDatosDesdeServidor(url, callback) {
+  activarSpinner(true);
+  let xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function () {
+    if (xhttp.readyState == 4) {
+      if (xhttp.status == 200) {
+        activarSpinner(false);
+        let dataFromServer = JSON.parse(xhttp.responseText);
+        let arrayGet = mapearDataArray(dataFromServer);
+        callback(null, arrayGet);
+      } else {
+        callback(`Error en la solicitud. Estado: ${xhttp.status}`);
+      }
+    }
+  };
+
+  xhttp.open("GET", url, true);
+  xhttp.setRequestHeader("Content-Type", "application/json");
+  xhttp.send();
+}
+
+
+function mapearDataArray(data) {
+  return data.map(item => {
+    if ('equipo' in item) {
+      
+      return new Futbolista(
+        item.id,
+        item.apellido,
+        item.nombre,
+        item.edad,
+        item.equipo,
+        item.posicion,
+        item.cantidadGoles
+      );
+    } else if ('titulo' in item) {
+     
+      return new Profesional(
+        item.id,
+        item.apellido,
+        item.nombre,
+        item.edad,
+        item.titulo,
+        item.facultad,
+        item.añoGraduacion
+      );
+    } else {
+      
+      return new Persona(item.id, item.nombre, item.apellido, item.edad);
+    }
+  });
+}
+
+// SPINNER
+function activarSpinner(estaActivo) {
+  let spinnerContainer = document.getElementById("spinner-container");
+
+  if (estaActivo) {
+    spinnerContainer.style.display = "flex";
+  } else {
+    spinnerContainer.style.display = "none";
+  }
+}
+
+// CREAR TABLA
+function agregarFila(esActualizar) {
+
+let tableBody = document.getElementById("elementosTabla").getElementsByTagName('tbody')[0];
+console.log(esActualizar);
+if(esActualizar === true){
+  tableBody.innerHTML = ""; 
+}
+listaObjeto.forEach(elemento => {
+    let row = tableBody.insertRow();
+    let atributos = ["id", "apellido", "nombre", "edad", "equipo", "posicion", "cantidadGoles", "titulo", "facultad", "añoGraduacion"];
+
+      atributos.forEach((atributo, index) => {
+        let cell = row.insertCell(index);
+          cell.textContent = elemento.hasOwnProperty(atributo) ? elemento[atributo] : "N/A";
+      });
+
+      botonesFormulario(elemento, row, atributos);
+  });
+}
+
+function botonesFormulario(elemento, row) {
+  let accionesCell = row.insertCell(-1);  // Insertamos en la última posición
+
+  // Botón Modificar
+  let modificarButton = document.createElement("button");
+  modificarButton.textContent = "Modificar";
+  modificarButton.addEventListener("click", () => modificarElemento(elemento));
+  accionesCell.appendChild(modificarButton);
+
+  // Botón Eliminar
+  let eliminarButton = document.createElement("button");
+  eliminarButton.textContent = "Eliminar";
+  eliminarButton.addEventListener("click", () => eliminarElemento(elemento));
+  accionesCell.appendChild(eliminarButton);
+}
+
+function agregarElemento() {
+  document.getElementById("elementosTabla").style.display = 'none';
+  document.getElementById("agregarElemento").style.display = 'none';   
+  mostrarFormulario('alta', null);
+}
+
+function modificarElemento(elemento) {
+  document.getElementById("elementosTabla").style.display = 'none';
+  document.getElementById("agregarElemento").style.display = 'none';   
+  mostrarFormulario('modificacion', elemento);
+}
+
+function eliminarElemento(elemento) {    
+  eliminarElementoPorID(elemento.id);   
+}
+
+// FORMULARIO ABM
+function mostrarFormulario(accion, datosModificar = null) {
+    let formularioContainer = document.getElementById("formularioContainer");
+    let formularioABM = document.getElementById("formularioABM");
+    let accionesFormulario = document.getElementById("accionesFormulario");
+
+    if (!formularioContainer) {
+        console.error("El elemento con ID 'formularioContainer' no existe.");
+        return;
+    }
+
+    formularioABM.reset();
+
+    let idLabel, idInput;
+
+    switch (accion) {
+        case 'alta':
+        esAlta = true;
+        mostrarAccionesFormulario();
+        habilitarCamposEmpleado();
+        break; 
+
+        case 'modificacion':
+        esAlta = false;
+      
+        llenarCamposAModificar(datosModificar);
+        mostrarId();
+        mostrarAccionesFormulario();
+        habilitarCamposEmpleado();
+
+        document.getElementById("formularioContainer").style.display = 'none';
+        document.getElementById("elementosTabla").style.display = 'table';
+        document.getElementById("agregarElemento").style.display = 'block';      
+        break;
+
+        default:
+        break;
+    }
+
+    formularioContainer.style.display = 'block';
+  }
+
+  function mostrarId() {
+    let idLabel = formularioABM.querySelector('label[for="idInput"]');
+    let idInput = formularioABM.querySelector('#idInput');
+    if (idLabel && idInput) {
+      idLabel.style.display = 'block';
+      idInput.style.display = 'block';
+    }
+  }
+
+  function mostrarAccionesFormulario() {
+    if (accionesFormulario) {
+      accionesFormulario.style.display = 'block';
+    }
+  }
+
+  function llenarCamposAModificar(datosModificar){
+    if (datosModificar) {
+        Object.keys(datosModificar).forEach((clave) => {
+            let input = formularioABM.querySelector(`#${clave}Input`);
+            if (input) {
+            input.value = datosModificar[clave];
+            }
+        });
+
+    }
+  }
+
+function habilitarCamposEmpleado() {
+    let equipoInput = document.getElementById("equipoInput");
+    let posicionInput = document.getElementById("posicionInput");
+    let cantidadGolesInput = document.getElementById("cantidadGolesInput");
+    
+    let tituloInput = document.getElementById("tituloInput");
+    let facultadInput = document.getElementById("facultadInput");
+    let añoDeGraduadoInput = document.getElementById("añoGraduacionInput");
+
+    if (equipoInput.value.trim() !== "" || posicionInput.value.trim() !== "" || cantidadGolesInput.value.trim() !== "") {
+        // Futbolista
+        tituloInput.disabled = true;
+        facultadInput.disabled = true;
+        añoDeGraduadoInput.disabled = true;
+
+        equipoInput.disabled = false;
+        posicionInput.disabled = false;
+        cantidadGolesInput.disabled = false;
+    } else if (tituloInput.value.trim() !== "" || facultadInput.value.trim() !== "" || añoDeGraduadoInput.value.trim() !== "") {
+        // Profesional
+        equipoInput.disabled = true;
+        posicionInput.disabled = true;
+        cantidadGolesInput.disabled = true;
+
+        tituloInput.disabled = false;
+        facultadInput.disabled = false;
+        añoDeGraduadoInput.disabled = false;
+    } else {
+        // Ninguno seleccionado
+        equipoInput.disabled = false;
+        posicionInput.disabled = false;
+        cantidadGolesInput.disabled = false;
+        tituloInput.disabled = false;
+        facultadInput.disabled = false;
+        añoDeGraduadoInput.disabled = false;
+    }
+}
+
+function cancelarAccion() {
+    document.getElementById("formularioContainer").style.display = 'none';
+    document.getElementById("elementosTabla").style.display = 'table';
+    document.getElementById("agregarElemento").style.display = 'block';
+}
+
+// ALTA Y MODIFICACIÓN DE DATOS
+function realizarAccion() {
+        
+    let formularioABM = document.getElementById("formularioABM");
+
+    let datosFormulario = {
+        id: formularioABM.querySelector("#idInput").value,
+        nombre: formularioABM.querySelector("#nombreInput").value,
+        apellido: formularioABM.querySelector("#apellidoInput").value,
+        edad: formularioABM.querySelector("#edadInput").value,
+        equipo: formularioABM.querySelector("#equipoInput").value,
+        posicion: formularioABM.querySelector("#posicionInput").value,
+        cantidadGoles: formularioABM.querySelector("#cantidadGolesInput").value,
+        titulo: formularioABM.querySelector("#tituloInput").value,
+        facultad: formularioABM.querySelector("#facultadInput").value,
+        añoGraduacion: formularioABM.querySelector("#añoGraduacionInput").value,       
+    };
+
+    let validarDatos = validarDatosFormulario(datosFormulario);   
+    
+    if(validarDatos){
+        
+        let datosEnviados = Object.fromEntries(
+        Object.entries(datosFormulario).filter(([_, value]) => value !== ""));
+        
+        if (esAlta) {
+            altaDatos(datosEnviados);
+        }else{       
+            modificarDatos(datosEnviados);
+        }
+    }
+        
+}
+
+function validarDatosFormulario(datosFormulario){
+  let esValido = true;
+    console.log(datosFormulario);
+  if(datosFormulario.equipo == "" && datosFormulario.posicion == "" && datosFormulario.cantidadGoles == ""){
+    delete datosFormulario.equipo;
+    delete datosFormulario.posicion;
+    delete datosFormulario.cantidadGoles;
+    console.log("Es Profesional");
+  }
+
+  if(datosFormulario.titulo == "" && datosFormulario.facultad == "" && datosFormulario.añoGraduacion == ""){
+    delete datosFormulario.titulo;
+    delete datosFormulario.facultad;
+    delete datosFormulario.añoGraduacion;
+    console.log("Es Futbolista");
+  }
+
+ 
+  for (let campo in datosFormulario) {
+    if (!datosFormulario.hasOwnProperty(campo)) continue;
+
+    let valor = datosFormulario[campo];
+
+    if (valor === "" && campo !== "id") {
+      alert(`Por favor, ingresa un valor para el campo: ${campo} válido.`);
+      esValido = false;
+      break;
+    }
+
+    if (campo === "edad" && valor < 15 && valor !== "") {
+      alert(`Por favor, ingrese una edad válida. La edad: ${valor} no es válida.`);
+      esValido = false;
+      break;
+    }
+
+    if (campo === "cantidadGoles" && valor < 0 && valor !== "") {
+      alert(`Por favor, ingrese una cantidad de goles válida. El valor: ${valor} no es válido.`);
+      esValido = false;
+      break;
+    }
+
+    if (campo === "añoGraduacion" && valor <= 1950 && valor !== "") {
+      alert(`Por favor, ingrese un año de graduación válida. El valor: ${valor} no es válido.`);
+      esValido = false;
+      break;
+    }
+
+  }
+
+  return esValido;
+  
+}
+
+// ALTA DE LOS DATOS
+async function altaDatos(datosEnviados) {
+ 
+  activarSpinner(true);
+  try {
+    
+    const response = await fetch(URL_SERVIDOR, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(datosEnviados),
+    });
+
+  
+    if (response.ok) {
+     
+      const dato = await response.json();
+     
+      datosEnviados.id = dato.id;
+      
+      let objeto = mapearDatoSolo(datosEnviados);     
+      listaObjeto.push(objeto);     
+      agregarFila(true);
+     
+      document.getElementById("formularioContainer").style.display = 'none';   
+      document.getElementById("elementosTabla").style.display = 'table';   
+      document.getElementById("agregarElemento").style.display = 'block';
+
+    } else {     
+      alert(`Error en la solicitud. Estado: ${response.status}`);
+    }
+  } catch (error) {   
+    alert(`Error en la solicitud: ${error}`);
+  } finally {
+    activarSpinner(false);
+  }
+}
+
+function mapearDatoSolo(item) {
+  if ('equipo' in item) {
+    return new Futbolista(
+      item.id,
+      item.apellido,
+      item.nombre,
+      item.edad,
+      item.equipo,
+      item.posicion,
+      item.cantidadGoles
+    );
+  } else if ('titulo' in item) {
+    return new Profesional(
+      item.id,
+      item.apellido,
+      item.nombre,
+      item.edad,
+      item.titulo,
+      item.facultad,
+      item.añoGraduacion
+    );
+  } else {
+    return new Persona(item.id, item.nombre, item.apellido, item.edad);
+  }
+}
+
+// MODIFICACION DE DATOS
+function modificarDatos(datosEnviados) {
+  activarSpinner(true);
+  
+  fetch(URL_SERVIDOR, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(datosEnviados),
+  })
+    .then(response => {
+      if (response.ok) {
+        return response.text();
+      } else {
+        throw new Error(`Error ${response.status}`);
+      }
+    })
+    .then(dato => {
+      console.log(dato);
+
+      let index = listaObjeto.findIndex(elemento => elemento.id == datosEnviados.id);
+
+      if (index !== -1) {
+        listaObjeto[index].id = datosEnviados.id;
+        listaObjeto[index].nombre = datosEnviados.nombre;
+        listaObjeto[index].apellido = datosEnviados.apellido;
+        listaObjeto[index].edad = datosEnviados.edad;
+
+        if (datosEnviados.equipo !== undefined) {
+          listaObjeto[index].equipo = datosEnviados.equipo;
+          listaObjeto[index].posicion = datosEnviados.posicion;
+          listaObjeto[index].cantidadGoles = datosEnviados.cantidadGoles;
+          delete listaObjeto[index].titulo;
+          delete listaObjeto[index].facultad;
+          delete listaObjeto[index].añoGraduacion;
+        }
+
+        if (datosEnviados.titulo !== undefined) {
+          listaObjeto[index].titulo = datosEnviados.titulo;
+          listaObjeto[index].facultad = datosEnviados.facultad;
+          listaObjeto[index].añoGraduacion = datosEnviados.añoGraduacion;
+          delete listaObjeto[index].equipo;
+          delete listaObjeto[index].posicion;
+          delete listaObjeto[index].cantidadGoles;
+        }
+
+        agregarFila(true);
+
+        document.getElementById("formularioContainer").style.display = 'none';
+        document.getElementById("elementosTabla").style.display = 'table';
+        document.getElementById("agregarElemento").style.display = 'block';
+      }
+    })
+    .catch(error => {
+      alert(`Error en la solicitud: ${error.message}`);
+    })
+    .finally(() => {
+      activarSpinner(false);
+    });
+}
+
+// ELIMINAR DATO DEL SERVIDOR
+function eliminarElementoPorID(id) {
+
+activarSpinner(true);
+let xhttp = new XMLHttpRequest();
+
+xhttp.onreadystatechange = function () {
+  if (xhttp.readyState == 4) {
+    if (xhttp.status == 200) {
+      activarSpinner(false);
+      let index = listaObjeto.findIndex(elemento => elemento.id === id);
+
+      if (index !== -1) {
+      listaObjeto.splice(index, 1);
+      agregarFila(true);
+      }
+
+    } else {
+      alert(`Error al eliminar elemento. Estado: ${xhttp.status}`);
+    }
+  }
+};
+
+xhttp.open("DELETE", URL_SERVIDOR, true);
+xhttp.setRequestHeader("Content-Type", "application/json");
+
+let objetoAEliminar = {
+  id: id
+};
+
+xhttp.send(JSON.stringify(objetoAEliminar));
+}
+
+</script>
