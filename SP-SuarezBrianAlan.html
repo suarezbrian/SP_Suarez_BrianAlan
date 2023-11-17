@@ -385,7 +385,7 @@ function realizarAccion() {
         facultad: formularioABM.querySelector("#facultadInput").value,
         añoGraduacion: formularioABM.querySelector("#añoGraduacionInput").value,       
     };
-
+    console.log(datosFormulario);
     let validarDatos = validarDatosFormulario(datosFormulario);   
     
     if(validarDatos){
@@ -404,12 +404,14 @@ function realizarAccion() {
 
 function validarDatosFormulario(datosFormulario){
   let esValido = true;
-    console.log(datosFormulario);
+  let esValidoProfesional = true;
+  let esValidoFutbolista = true;
   if(datosFormulario.equipo == "" && datosFormulario.posicion == "" && datosFormulario.cantidadGoles == ""){
     delete datosFormulario.equipo;
     delete datosFormulario.posicion;
     delete datosFormulario.cantidadGoles;
     console.log("Es Profesional");
+    esValidoFutbolista = false;
   }
 
   if(datosFormulario.titulo == "" && datosFormulario.facultad == "" && datosFormulario.añoGraduacion == ""){
@@ -417,36 +419,68 @@ function validarDatosFormulario(datosFormulario){
     delete datosFormulario.facultad;
     delete datosFormulario.añoGraduacion;
     console.log("Es Futbolista");
+    esValidoProfesional = false;
   }
-
+ 
  
   for (let campo in datosFormulario) {
-    if (!datosFormulario.hasOwnProperty(campo)) continue;
+    if(!esValidoFutbolista && !esValidoProfesional){
+        esValido = false;
+        alert(`Hay campos obligatorio vacios. Complete los campos Equipo o Titulo`);
+        break;
+    }else{
+        if (!datosFormulario.hasOwnProperty(campo)) continue;
 
-    let valor = datosFormulario[campo];
+        let valor = datosFormulario[campo];
 
-    if (valor === "" && campo !== "id") {
-      alert(`Por favor, ingresa un valor para el campo: ${campo} válido.`);
-      esValido = false;
-      break;
-    }
+        if (valor === "" && campo !== "id") {
+        alert(`Por favor, ingresa un valor para el campo: ${campo} válido.`);
+        esValido = false;
+        break;
+        }
 
-    if (campo === "edad" && valor < 15 && valor !== "") {
-      alert(`Por favor, ingrese una edad válida. La edad: ${valor} no es válida.`);
-      esValido = false;
-      break;
-    }
+        if (campo === "edad") {
+            if (isNaN(valor)) {
+                alert(`Por favor, ingrese un valor numérico para la edad. El valor ingresado: ${valor} no es válido.`);
+                esValido = false;
+                break;
+            }
 
-    if (campo === "cantidadGoles" && valor < 0 && valor !== "") {
-      alert(`Por favor, ingrese una cantidad de goles válida. El valor: ${valor} no es válido.`);
-      esValido = false;
-      break;
-    }
+            if (valor < 15 && valor !== "") {
+                alert(`Por favor, ingrese una edad válida. La edad: ${valor} no es válida.`);
+                esValido = false;
+                break;
+            }
+        }
 
-    if (campo === "añoGraduacion" && valor <= 1950 && valor !== "") {
-      alert(`Por favor, ingrese un año de graduación válida. El valor: ${valor} no es válido.`);
-      esValido = false;
-      break;
+        if (campo === "cantidadGoles") {
+            if (isNaN(valor)) {
+                alert(`Por favor, ingrese un valor numérico para la cantidad de goles. El valor ingresado: ${valor} no es válido.`);
+                esValido = false;
+                break;
+            }
+
+            if (valor < 0 && valor !== "") {
+                alert(`Por favor, ingrese una cantidad de goles válida. El valor: ${valor} no es válido.`);
+                esValido = false;
+                break;
+            }
+        }
+
+        if (campo === "añoGraduacion") {
+            if (isNaN(valor)) {
+                alert(`Por favor, ingrese un valor numérico para el año de graduación. El valor ingresado: ${valor} no es válido.`);
+                esValido = false;
+                break;
+            }
+
+            if (valor <= 1950 && valor !== "") {
+                alert(`Por favor, ingrese un año de graduación válido. El valor: ${valor} no es válido.`);
+                esValido = false;
+                break;
+            }
+        }
+    
     }
 
   }
