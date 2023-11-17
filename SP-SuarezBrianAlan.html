@@ -283,11 +283,7 @@ function mostrarFormulario(accion, datosModificar = null) {
         llenarCamposAModificar(datosModificar);
         mostrarId();
         mostrarAccionesFormulario();
-        habilitarCamposEmpleado();
-
-        document.getElementById("formularioContainer").style.display = 'none';
-        document.getElementById("elementosTabla").style.display = 'table';
-        document.getElementById("agregarElemento").style.display = 'block';      
+        habilitarCamposEmpleado();   
         break;
 
         default:
@@ -426,7 +422,7 @@ function validarDatosFormulario(datosFormulario){
   for (let campo in datosFormulario) {
     if(!esValidoFutbolista && !esValidoProfesional){
         esValido = false;
-        alert(`Hay campos obligatorio vacios. Complete los campos Equipo o Titulo`);
+        alert(`Hay campos obligatorio vacios.`);
         break;
     }else{
         if (!datosFormulario.hasOwnProperty(campo)) continue;
