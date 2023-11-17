@@ -127,30 +127,37 @@ class Profesional extends Persona {
 // OBTENER DATOS DEL SERVIDOR
 let listaObjeto = [];
 
-obtenerDatosDesdeServidor(URL_SERVIDOR, function (error, datos) {
-  if (error) {
-    alert(`Error en la solicitud: ${error}`);
-  } else {
-    listaObjeto = datos;  
-    console.log(listaObjeto); 
-    agregarFila(false);
-  }
+obtenerDatosDesdeServidor(URL_SERVIDOR, function (error, datos) { 
+    if (error) {
+        alert(`Error en la solicitud: ${error}`);
+    } else {       
+        listaObjeto = datos;  
+        console.log(listaObjeto); 
+        agregarFila(false);     
+    }  
 });
 
 
 function obtenerDatosDesdeServidor(url, callback) {
   activarSpinner(true);
   let xhttp = new XMLHttpRequest();
+
   xhttp.onreadystatechange = function () {
-    if (xhttp.readyState == 4) {
-      if (xhttp.status == 200) {
+    try {
+      if (xhttp.readyState == 4) {
         activarSpinner(false);
-        let dataFromServer = JSON.parse(xhttp.responseText);
-        let arrayGet = mapearDataArray(dataFromServer);
-        callback(null, arrayGet);
-      } else {
-        callback(`Error en la solicitud. Estado: ${xhttp.status}`);
+
+        if (xhttp.status == 200) {
+          let dataFromServer = JSON.parse(xhttp.responseText);
+          let arrayGet = mapearDataArray(dataFromServer);
+          callback(null, arrayGet);
+        } else {
+          callback(`Error en la solicitud. Estado: ${xhttp.status}`);
+        }
       }
+    } catch (error) {
+      activarSpinner(false);
+      callback(`Error en la solicitud: ${error}`);
     }
   };
 
